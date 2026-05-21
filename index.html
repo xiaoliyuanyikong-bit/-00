@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>席替えシステム 完全版</title>
+
+<style>
+
+:root{
+ --main:#1976d2;
+ --bg:#f4f6f8;
+ --card:#ffffff;
+ --danger:#d32f2f;
+}
+
+*{
+ box-sizing:border-box;
+ margin:0;
+ padding:0;
+}
+
+body{
+ font-family:
+ "Yu Gothic",
+ "Meiryo",
+ sans-serif;
+ background:var(--bg);
+ padding:20px;
+}
+
+h1{
+ text-align:center;
+ margin-bottom:20px;
+}
+
+.panel{
+ background:var(--card);
+ border-radius:12px;
+ padding:15px;
+ margin-bottom:15px;
+ box-shadow:0 2px 8px rgba(0,0,0,.08);
+}
+
+button{
+ padding:10px 15px;
+ border:none;
+ border-radius:8px;
+ cursor:pointer;
+ background:var(--main);
+ color:white;
+ margin:4px;
+}
+
+button:hover{
+ opacity:.9;
+}
+
+.danger{
+ background:var(--danger);
+}
+
+textarea,
+input,
+select{
+ width:100%;
+ padding:8px;
+ margin-top:5px;
+ margin-bottom:10px;
+}
+
+.hidden{
+ display:none;
+}
+
+#animationArea{
+ text-align:center;
+ font-size:32px;
+ font-weight:bold;
+ min-height:60px;
+ margin:20px 0;
+}
+
+#seatMap{
+ display:grid;
+ grid-template-columns:repeat(6,1fr);
+ gap:10px;
+}
+
+.seat{
+ background:white;
+ border:2px solid #ddd;
+ border-radius:10px;
+ min-height:80px;
+ display:flex;
+ flex-direction:column;
+ justify-content:center;
+ align-items:center;
+ font-size:14px;
+}
+
+.seatNumber{
+ font-weight:bold;
+ color:#666;
+ margin-bottom:5px;
+}
+
+.frontSeat{
+ border:3px solid orange;
+}
+
+.fixedSeat{
+ border:3px solid green;
+}
+
+@media(max-width:700px){
+
+ #seatMap{
+  grid-template-columns:repeat(3,1fr);
+ }
+
+ body{
+  padding:10px;
+ }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>席替えシステム 完全版</h1>
+
+<div class="panel">
+
+<button onclick="teacherLogin()">
+教師メニュー
+</button>
+
+<button onclick="presentationMode()">
+発表モード
+</button>
+
+<button onclick="startLottery()">
+席替え実行
+</button>
+
+<button onclick="startRevealMode()">
+一人ずつ発表
+</button>
+
+<button onclick="printSeats()">
+印刷
+</button>
+
+</div>
+
+<div id="teacherPanel"
+class="panel hidden">
+
+<h2>教師設定</h2>
+
+<label>
+教師パスワード
+</label>
+
+<input
+type="password"
+id="passwordInput">
+
+<hr>
+
+<h3>生徒一覧</h3>
+
+<textarea
+id="studentList"
+rows="12"
+placeholder="1行に1人入力"></textarea>
+
+<button onclick="loadStudents()">
+名簿読込
+</button>
+
+<hr>
+
+<h3>前列固定</h3>
+
+<input
+id="frontInput"
+placeholder="田中,佐藤">
+
+<hr>
+
+<h3>固定席設定</h3>
+
+<select id="fixedStudent">
+</select>
+
+<select id="fixedSeat">
+</select>
+
+<button onclick="addFixedSeat()">
+固定追加
+</button>
+
+<div id="fixedSeatList">
+</div>
+
+<hr>
+
+<h3>隣同士固定</h3>
+
+<input
+id="pairInput"
+placeholder="山田,鈴木">
+
+<button onclick="addPair()">
+追加
+</button>
+
+<div id="pairList">
+</div>
+
+<hr>
+
+<h3>隣禁止</h3>
+
+<input
+id="avoidInput"
+placeholder="A,B">
+
+<button onclick="addAvoidPair()">
+追加
+</button>
+
+<div id="avoidList">
+</div>
+
+<hr>
+
+<button onclick="saveSettings()">
+保存
+</button>
+
+<button
+class="danger"
+onclick="clearData()">
+
+全削除
+
+</button>
+
+</div>
+
+<div id="animationArea"></div>
+
+<div id="seatMap"></div>
+<script>
+
+const PASSWORD = "1234";
+
+let fixedSeats = {};
+let pairSeats = [];
+let avoidPairs = [];
+
+let currentResult = {};
+
+function teacherLogin(){
+
+ const pass = prompt("教師パスワード");
+
+ if(pass === PASSWORD){
+
+   document
+   .getElementById("teacherPanel")
+   .classList.remove("hidden");
+
+ }else{
+
+   alert("パスワードが違います");
+
+ }
+
+}
+
+function presentationMode(){
+
+ document
+ .getElementById("teacherPanel")
+ .classList.add("hidden");
+
+}
+
+function loadStudents(){
+
+ const names =
+ document.getElementById("studentList")
+ .value
+ .split("\n")
+ .map(v=>v.trim())
+ .filter(v=>v);
+
+ const select =
+ document.getElementById(
+ "fixedStudent"
+ );
+
+ select.innerHTML="";
+
+ names.forEach(name=>{
+
+   const op =
+   document.createElement("option");
+
+   op.value=name;
+   op.textContent=name;
+
+   select.appendChild(op);
+
+ });
+
+ alert(
+ `${names.length}人を読み込みました`
+ );
+
+}
+
+window.addEventListener(
+ "load",
+ ()=>{
+
+ const seatSelect =
+ document.getElementById(
+ "fixedSeat"
+ );
+
+ seatSelect.innerHTML="";
+
+ for(let i=1;i<=36;i++){
+
+   const op =
+   document.createElement("option");
+
+   op.value=i;
+   op.textContent=
+   `席 ${i}`;
+
+   seatSelect.appendChild(op);
+
+ }
+
+ loadSettings();
+
+ });
+
+function addFixedSeat(){
+
+ const student =
+ document.getElementById(
+ "fixedStudent"
+ ).value;
+
+ const seat =
+ document.getElementById(
+ "fixedSeat"
+ ).value;
+
+ if(!student)return;
+
+ fixedSeats[seat]=student;
+
+ renderFixedSeats();
+
+}
+
+function renderFixedSeats(){
+
+ const area =
+ document.getElementById(
+ "fixedSeatList"
+ );
+
+ area.innerHTML="";
+
+ Object.entries(fixedSeats)
+ .forEach(([seat,name])=>{
+
+   const div =
+   document.createElement("div");
+
+   div.innerHTML=
+   `${name} → 席${seat}`;
+
+   area.appendChild(div);
+
+ });
+
+}
+
+function addPair(){
+
+ const text =
+ document.getElementById(
+ "pairInput"
+ ).value;
+
+ if(!text.includes(",")){
+
+   alert(
+   "山田,鈴木 の形式"
+   );
+
+   return;
+
+ }
+
+ const pair =
+ text
+ .split(",")
+ .map(v=>v.trim());
+
+ pairSeats.push(pair);
+
+ renderPairs();
+
+}
+
+function renderPairs(){
+
+ const area =
+ document.getElementById(
+ "pairList"
+ );
+
+ area.innerHTML="";
+
+ pairSeats.forEach(pair=>{
+
+   const div =
+   document.createElement("div");
+
+   div.textContent=
+   `${pair[0]} ⇔ ${pair[1]}`;
+
+   area.appendChild(div);
+
+ });
+
+}
+
+function addAvoidPair(){
+
+ const text =
+ document.getElementById(
+ "avoidInput"
+ ).value;
+
+ if(!text.includes(",")){
+
+   alert(
+   "A,B の形式"
+   );
+
+   return;
+
+ }
+
+ const pair =
+ text
+ .split(",")
+ .map(v=>v.trim());
+
+ avoidPairs.push(pair);
+
+ renderAvoidPairs();
+
+}
+
+function renderAvoidPairs(){
+
+ const area =
+ document.getElementById(
+ "avoidList"
+ );
+
+ area.innerHTML="";
+
+ avoidPairs.forEach(pair=>{
+
+   const div =
+   document.createElement("div");
+
+   div.textContent=
+   `${pair[0]} × ${pair[1]}`;
+
+   area.appendChild(div);
+
+ });
+
+}
+
+function saveSettings(){
+
+ const data = {
+
+   fixedSeats,
+   pairSeats,
+   avoidPairs,
+
+   students:
+   document
+   .getElementById(
+   "studentList"
+   ).value,
+
+   front:
+   document
+   .getElementById(
+   "frontInput"
+   ).value
+
+ };
+
+ localStorage.setItem(
+ "seatSystemData",
+ JSON.stringify(data)
+ );
+
+ alert("保存しました");
+
+}
+
+function loadSettings(){
+
+ const saved =
+ localStorage.getItem(
+ "seatSystemData"
+ );
+
+ if(!saved)return;
+
+ const data =
+ JSON.parse(saved);
+
+ fixedSeats =
+ data.fixedSeats || {};
+
+ pairSeats =
+ data.pairSeats || [];
+
+ avoidPairs =
+ data.avoidPairs || [];
+
+ document
+ .getElementById(
+ "studentList"
+ ).value =
+ data.students || "";
+
+ document
+ .getElementById(
+ "frontInput"
+ ).value =
+ data.front || "";
+
+ renderFixedSeats();
+ renderPairs();
+ renderAvoidPairs();
+
+ loadStudents();
+
+}
+
+function clearData(){
+
+ if(
+ !confirm(
+ "すべて削除しますか？"
+ )
+ ) return;
+
+ localStorage.removeItem(
+ "seatSystemData"
+ );
+
+ location.reload();
+
+}
+
+function shuffle(arr){
+
+ for(
+ let i=arr.length-1;
+ i>0;
+ i--
+ ){
+
+   const j =
+   Math.floor(
+   Math.random()*(i+1)
+   );
+
+   [arr[i],arr[j]]=
+   [arr[j],arr[i]];
+
+ }
+
+}
+function getNeighbors(seat){
+
+ const row =
+ Math.floor((seat-1)/6);
+
+ const col =
+ (seat-1)%6;
+
+ const result=[];
+
+ const dirs=[
+  [-1,0],
+  [1,0],
+  [0,-1],
+  [0,1]
+ ];
+
+ dirs.forEach(d=>{
+
+   const r=row+d[0];
+   const c=col+d[1];
+
+   if(
+    r>=0 &&
+    r<6 &&
+    c>=0 &&
+    c<6
+   ){
+
+     result.push(
+      r*6+c+1
+     );
+
+   }
+
+ });
+
+ return result;
+
+}
+
+function checkAvoidPairs(result){
+
+ for(const pair of avoidPairs){
+
+   const a=pair[0];
+   const b=pair[1];
+
+   let seatA=null;
+   let seatB=null;
+
+   Object.entries(result)
+   .forEach(([seat,name])=>{
+
+     if(name===a)
+      seatA=parseInt(seat);
+
+     if(name===b)
+      seatB=parseInt(seat);
+
+   });
+
+   if(
+    seatA &&
+    seatB
+   ){
+
+     const near=
+     getNeighbors(
+      seatA
+     );
+
+     if(
+      near.includes(
+       seatB
+      )
+     ){
+
+       return false;
+
+     }
+
+   }
+
+ }
+
+ return true;
+
+}
+
+function checkPairSeats(result){
+
+ for(const pair of pairSeats){
+
+   const a=pair[0];
+   const b=pair[1];
+
+   let seatA=null;
+   let seatB=null;
+
+   Object.entries(result)
+   .forEach(([seat,name])=>{
+
+     if(name===a)
+      seatA=parseInt(seat);
+
+     if(name===b)
+      seatB=parseInt(seat);
+
+   });
+
+   if(
+    seatA &&
+    seatB
+   ){
+
+     const near=
+     getNeighbors(
+      seatA
+     );
+
+     if(
+      !near.includes(
+       seatB
+      )
+     ){
+
+       return false;
+
+     }
+
+   }
+
+ }
+
+ return true;
+
+}
+
+function checkPreviousSeats(result){
+
+ const saved=
+ localStorage.getItem(
+ "previousSeats"
+ );
+
+ if(!saved)
+  return true;
+
+ const prev=
+ JSON.parse(saved);
+
+ for(
+  const name
+  in prev
+ ){
+
+   const oldSeat=
+   prev[name];
+
+   let newSeat=null;
+
+   Object.entries(result)
+   .forEach(([seat,n])=>{
+
+     if(n===name){
+
+       newSeat=
+       parseInt(seat);
+
+     }
+
+   });
+
+   if(
+    oldSeat===newSeat
+   ){
+
+     return false;
+
+   }
+
+ }
+
+ return true;
+
+}
+
+function savePreviousSeats(result){
+
+ const data={};
+
+ Object.entries(result)
+ .forEach(([seat,name])=>{
+
+   if(name){
+
+     data[name]=
+     parseInt(seat);
+
+   }
+
+ });
+
+ localStorage.setItem(
+ "previousSeats",
+ JSON.stringify(data)
+ );
+
+}
+
+function buildSeatResult(){
+
+ const names=
+ document
+ .getElementById(
+ "studentList"
+ )
+ .value
+ .split("\n")
+ .map(v=>v.trim())
+ .filter(v=>v);
+
+ const frontStudents=
+ document
+ .getElementById(
+ "frontInput"
+ )
+ .value
+ .split(",")
+ .map(v=>v.trim())
+ .filter(v=>v);
+
+ let attempt=0;
+
+ while(attempt<500){
+
+   attempt++;
+
+   const result={};
+
+   Object.entries(
+    fixedSeats
+   ).forEach(
+   ([seat,name])=>{
+
+     result[seat]=name;
+
+   });
+
+   let remain=
+   names.filter(name=>
+   !Object.values(
+    fixedSeats
+   ).includes(name)
+   );
+
+   shuffle(remain);
+
+   for(
+    let seat=1;
+    seat<=36;
+    seat++
+   ){
+
+     if(
+      !result[seat]
+     ){
+
+       result[seat]=
+       remain.shift() || "";
+
+     }
+
+   }
+
+   frontStudents.forEach(
+   student=>{
+
+     let currentSeat=
+     null;
+
+     Object.entries(
+      result
+     ).forEach(
+     ([seat,name])=>{
+
+       if(
+        name===student
+       ){
+
+         currentSeat=
+         parseInt(seat);
+
+       }
+
+     });
+
+     if(
+      currentSeat &&
+      currentSeat>12
+     ){
+
+       for(
+        let target=1;
+        target<=12;
+        target++
+       ){
+
+         if(
+          !frontStudents.includes(
+           result[target]
+          )
+         ){
+
+           const tmp=
+           result[target];
+
+           result[target]=
+           student;
+
+           result[currentSeat]=
+           tmp;
+
+           break;
+
+         }
+
+       }
+
+     }
+
+   });
+
+   if(
+    !checkPairSeats(
+      result
+    )
+   ) continue;
+
+   if(
+    !checkAvoidPairs(
+      result
+    )
+   ) continue;
+
+   if(
+    !checkPreviousSeats(
+      result
+    )
+   ) continue;
+
+   return result;
+
+ }
+
+ alert(
+ "条件が厳しすぎて配置できません"
+ );
+
+ return null;
+
+}
+  function drawSeatMap(result){
+
+ currentResult=result;
+
+ const map=
+ document.getElementById(
+ "seatMap"
+ );
+
+ map.innerHTML="";
+
+ for(
+  let i=1;
+  i<=36;
+  i++
+ ){
+
+   const seat=
+   document.createElement(
+    "div"
+   );
+
+   seat.className="seat";
+
+   if(
+    fixedSeats[i]
+   ){
+
+     seat.classList.add(
+      "fixedSeat"
+     );
+
+   }
+
+   if(i<=12){
+
+     seat.classList.add(
+      "frontSeat"
+     );
+
+   }
+
+   seat.innerHTML=
+   `
+   <div class="seatNumber">
+   ${i}
+   </div>
+
+   <div>
+   ${result[i]||""}
+   </div>
+   `;
+
+   map.appendChild(seat);
+
+ }
+
+}
+
+function startLottery(){
+
+ const result=
+ buildSeatResult();
+
+ if(!result)return;
+
+ const area=
+ document.getElementById(
+ "animationArea"
+ );
+
+ let count=0;
+
+ const timer=
+ setInterval(()=>{
+
+   area.textContent=
+   Math.floor(
+    Math.random()*9999
+   );
+
+   count++;
+
+   if(count>40){
+
+     clearInterval(
+      timer
+     );
+
+     area.textContent=
+     "席替え完了！";
+
+     drawSeatMap(
+      result
+     );
+
+     savePreviousSeats(
+      result
+     );
+
+   }
+
+ },80);
+
+}
+
+async function startRevealMode(){
+
+ const result=
+ buildSeatResult();
+
+ if(!result)return;
+
+ currentResult=result;
+
+ savePreviousSeats(
+  result
+ );
+
+ const area=
+ document.getElementById(
+ "animationArea"
+ );
+
+ const map=
+ document.getElementById(
+ "seatMap"
+ );
+
+ map.innerHTML="";
+
+ const order=
+ Object.entries(result)
+ .filter(v=>v[1]);
+
+ shuffle(order);
+
+ for(
+  const item
+  of order
+ ){
+
+   const seat=
+   item[0];
+
+   const name=
+   item[1];
+
+   area.innerHTML=
+   `
+   ${name}
+   <br>
+   ↓
+   <br>
+   席 ${seat}
+   `;
+
+   await new Promise(
+    resolve=>
+    setTimeout(
+     resolve,
+     1200
+    )
+   );
+
+ }
+
+ area.textContent=
+ "発表終了";
+
+ drawSeatMap(
+  result
+ );
+
+}
+
+function printSeats(){
+
+ window.print();
+
+}
+
+window.addEventListener(
+ "beforeprint",
+ ()=>{
+
+ document
+ .getElementById(
+ "teacherPanel"
+ )
+ .classList.add(
+ "hidden"
+ );
+
+ });
+
+window.addEventListener(
+ "afterprint",
+ ()=>{
+
+ });
+
+</script>
+
+</body>
+</html>
