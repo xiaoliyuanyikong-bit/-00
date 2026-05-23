@@ -13,6 +13,8 @@
  --bg:#f4f6f8;
  --card:#ffffff;
  --danger:#d32f2f;
+ --fixed:#4caf50;
+ --front:#ff9800;
 }
 
 *{
@@ -35,6 +37,11 @@ h1{
  margin-bottom:20px;
 }
 
+h3{
+ margin-top:15px;
+ margin-bottom:10px;
+}
+
 .panel{
  background:var(--card);
  border-radius:12px;
@@ -51,6 +58,7 @@ button{
  background:var(--main);
  color:white;
  margin:4px;
+ font-size:14px;
 }
 
 button:hover{
@@ -76,16 +84,21 @@ select{
 
 #animationArea{
  text-align:center;
- font-size:32px;
+ font-size:48px;
  font-weight:bold;
- min-height:60px;
- margin:20px 0;
+ min-height:80px;
+ margin:30px 0;
+ padding:20px;
+ background:#fff3cd;
+ border-radius:10px;
+ border:2px solid #ffc107;
 }
 
 #seatMap{
  display:grid;
  grid-template-columns:repeat(6,1fr);
  gap:10px;
+ margin-bottom:30px;
 }
 
 .seat{
@@ -98,20 +111,82 @@ select{
  justify-content:center;
  align-items:center;
  font-size:14px;
+ transition:all 0.1s ease;
+ box-shadow:0 2px 4px rgba(0,0,0,.1);
+}
+
+.seat:hover{
+ transform:scale(1.05);
+ box-shadow:0 4px 8px rgba(0,0,0,.2);
 }
 
 .seatNumber{
  font-weight:bold;
- color:#666;
+ color:#999;
+ font-size:12px;
  margin-bottom:5px;
 }
 
+.seatName{
+ font-weight:bold;
+ font-size:16px;
+ color:#333;
+}
+
 .frontSeat{
- border:3px solid orange;
+ border:3px solid var(--front);
+ background:#fff8e1;
 }
 
 .fixedSeat{
- border:3px solid green;
+ border:3px solid var(--fixed);
+ background:#e8f5e9;
+}
+
+.animating{
+ background:#ffeb3b !important;
+ border-color:#fbc02d !important;
+ box-shadow:0 0 20px rgba(255,193,7,0.8) !important;
+ transform:scale(1.1);
+}
+
+.legend{
+ display:flex;
+ gap:30px;
+ justify-content:center;
+ margin:20px 0;
+ padding:15px;
+ background:#f5f5f5;
+ border-radius:8px;
+ flex-wrap:wrap;
+}
+
+.legend-item{
+ display:flex;
+ align-items:center;
+ gap:8px;
+}
+
+.legend-box{
+ width:30px;
+ height:30px;
+ border:3px solid;
+ border-radius:5px;
+}
+
+.legend-box.normal{
+ background:white;
+ border-color:#ddd;
+}
+
+.legend-box.fixed{
+ background:#e8f5e9;
+ border-color:var(--fixed);
+}
+
+.legend-box.front{
+ background:#fff8e1;
+ border-color:var(--front);
 }
 
 @media(max-width:700px){
@@ -124,7 +199,12 @@ select{
   padding:10px;
  }
 
+ .legend{
+  gap:15px;
+ }
+
 }
+
 #seatSelector{
  display:grid;
  grid-template-columns:repeat(6,60px);
@@ -143,52 +223,70 @@ select{
  display:flex;
  align-items:center;
  justify-content:center;
+ font-weight:bold;
+ transition:all 0.2s;
 }
 
 .selectSeat:hover{
  background:#e3f2fd;
+ transform:scale(1.05);
 }
 
 .selectedSeat{
- background:#1976d2;
+ background:var(--main);
  color:white;
- border-color:#1976d2;
+ border-color:var(--main);
 }
+
+.controls{
+ display:flex;
+ gap:10px;
+ flex-wrap:wrap;
+ margin-bottom:20px;
+}
+
+.controls button{
+ flex:1;
+ min-width:120px;
+}
+
 </style>
 </head>
 
 <body>
 
-<h1>席替えシステム 完全版</h1>
+<h1>🎲 席替えシステム 完全版</h1>
 
 <div class="panel">
 
+<div class="controls">
 <button onclick="teacherLogin()">
-教師メニュー
+👨‍🏫 教師メニュー
 </button>
 
 <button onclick="presentationMode()">
-発表モード
+🎬 発表モード
 </button>
 
 <button onclick="startLottery()">
-席替え実行
+🔄 席替え実行
 </button>
 
 <button onclick="startRevealMode()">
-一人ずつ発表
+✨ 一人ずつ発表
 </button>
 
 <button onclick="printSeats()">
-印刷
+🖨️ 印刷
 </button>
+</div>
 
 </div>
 
 <div id="teacherPanel"
 class="panel hidden">
 
-<h2>教師設定</h2>
+<h2>👨‍🏫 教師設定</h2>
 
 <label>
 教師パスワード
@@ -200,7 +298,7 @@ id="passwordInput">
 
 <hr>
 
-<h3>生徒一覧</h3>
+<h3>📝 生徒一覧</h3>
 
 <textarea
 id="studentList"
@@ -213,7 +311,7 @@ placeholder="1行に1人入力"></textarea>
 
 <hr>
 
-<h3>前列固定</h3>
+<h3>⬜ 前列固定</h3>
 
 <input
 id="frontInput"
@@ -221,7 +319,7 @@ placeholder="田中,佐藤">
 
 <hr>
 
-<h3>固定席設定</h3>
+<h3>📌 固定席設定</h3>
 
 <select id="fixedStudent"></select>
 
@@ -246,7 +344,7 @@ placeholder="田中,佐藤">
 
 <hr>
 
-<h3>隣同士固定</h3>
+<h3>🔗 隣同士固定</h3>
 
 <input
 id="pairInput"
@@ -261,7 +359,7 @@ placeholder="山田,鈴木">
 
 <hr>
 
-<h3>隣禁止</h3>
+<h3>❌ 隣禁止</h3>
 
 <input
 id="avoidInput"
@@ -277,7 +375,7 @@ placeholder="A,B">
 <hr>
 
 <button onclick="saveSettings()">
-保存
+💾 保存
 </button>
 
 <button
@@ -290,9 +388,25 @@ onclick="clearData()">
 
 </div>
 
-<div id="animationArea"></div>
+<div id="animationArea" class="hidden"></div>
+
+<div class="legend hidden" id="legend">
+ <div class="legend-item">
+  <div class="legend-box normal"></div>
+  <span>通常席</span>
+ </div>
+ <div class="legend-item">
+  <div class="legend-box fixed"></div>
+  <span>📌 固定席</span>
+ </div>
+ <div class="legend-item">
+  <div class="legend-box front"></div>
+  <span>⬜ 前列固定</span>
+ </div>
+</div>
 
 <div id="seatMap"></div>
+
 <script>
 
 const PASSWORD = "1234";
@@ -301,8 +415,8 @@ let fixedSeats = {};
 let pairSeats = [];
 let avoidPairs = [];
 let selectedSeat = null;
-
 let currentResult = {};
+let isAnimating = false;
 
 function teacherLogin(){
 
@@ -449,12 +563,20 @@ function renderFixedSeats(){
    const div =
    document.createElement("div");
 
+   div.style.marginBottom = "8px";
+   div.style.padding = "10px";
+   div.style.background = "#e8f5e9";
+   div.style.borderLeft = "4px solid var(--fixed)";
+   div.style.borderRadius = "4px";
+
    div.innerHTML=
-   `${name} → 席${seat} `;
+   `📌 <strong>${name}</strong> → 席${seat}`;
 
    const btn = document.createElement("button");
    btn.textContent = "削除";
    btn.style.padding = "5px 10px";
+   btn.style.marginLeft = "10px";
+   btn.style.fontSize = "12px";
    btn.onclick = () => {
      delete fixedSeats[seat];
      renderFixedSeats();
@@ -510,12 +632,20 @@ function renderPairs(){
    const div =
    document.createElement("div");
 
+   div.style.marginBottom = "8px";
+   div.style.padding = "10px";
+   div.style.background = "#e3f2fd";
+   div.style.borderLeft = "4px solid var(--main)";
+   div.style.borderRadius = "4px";
+
    div.textContent=
-   `${pair[0]} ⇔ ${pair[1]} `;
+   `🔗 ${pair[0]} ⇔ ${pair[1]}`;
 
    const btn = document.createElement("button");
    btn.textContent = "削除";
    btn.style.padding = "5px 10px";
+   btn.style.marginLeft = "10px";
+   btn.style.fontSize = "12px";
    btn.onclick = () => {
      pairSeats.splice(idx,1);
      renderPairs();
@@ -571,12 +701,20 @@ function renderAvoidPairs(){
    const div =
    document.createElement("div");
 
+   div.style.marginBottom = "8px";
+   div.style.padding = "10px";
+   div.style.background = "#ffebee";
+   div.style.borderLeft = "4px solid var(--danger)";
+   div.style.borderRadius = "4px";
+
    div.textContent=
-   `${pair[0]} × ${pair[1]} `;
+   `❌ ${pair[0]} × ${pair[1]}`;
 
    const btn = document.createElement("button");
    btn.textContent = "削除";
    btn.style.padding = "5px 10px";
+   btn.style.marginLeft = "10px";
+   btn.style.fontSize = "12px";
    btn.onclick = () => {
      avoidPairs.splice(idx,1);
      renderAvoidPairs();
@@ -694,6 +832,8 @@ function shuffle(arr){
    [arr[j],arr[i]];
 
  }
+
+ return arr;
 
 }
 
@@ -1049,9 +1189,7 @@ function buildSeatResult(){
     )
    ) continue;
 
-   currentResult = result;
-   savePreviousSeats(result);
-
+   currentResult=result;
    return result;
 
  }
@@ -1063,39 +1201,68 @@ function buildSeatResult(){
 function renderSeatMap(result){
 
  const map =
- document.getElementById("seatMap");
+ document.getElementById(
+ "seatMap"
+ );
 
  map.innerHTML="";
 
- for(let seat=1;seat<=36;seat++){
+ for(let i=1;i<=36;i++){
 
-   const div =
+   const seat =
    document.createElement("div");
 
-   div.className="seat";
+   seat.className="seat";
 
-   const name = result[seat] || "";
+   let isFrontSeat=false;
+   let isFixedSeat=false;
 
-   if(fixedSeats[seat]){
-     div.classList.add("fixedSeat");
+   const frontInput=
+   document
+   .getElementById("frontInput")
+   .value
+   .split(",")
+   .map(v=>v.trim())
+   .filter(v=>v);
+
+   const studentName=result[i]||"";
+
+   if(
+    fixedSeats[i]
+   ){
+
+     isFixedSeat=true;
+
    }
 
-   if(seat<=12){
-     div.classList.add("frontSeat");
+   if(i<=12 || frontInput.includes(studentName)){
+
+     isFrontSeat=true;
+
    }
 
-   div.innerHTML=`
-     <div class="seatNumber">席${seat}</div>
-     <div>${name}</div>
+   if(isFixedSeat){
+     seat.classList.add("fixedSeat");
+   }
+
+   if(isFrontSeat && !isFixedSeat){
+     seat.classList.add("frontSeat");
+   }
+
+   seat.innerHTML=`
+     <div class="seatNumber">席${i}</div>
+     <div class="seatName">${studentName}</div>
    `;
 
-   map.appendChild(div);
+   map.appendChild(seat);
 
  }
 
 }
 
 function startLottery(){
+
+ if(isAnimating) return;
 
  const result = buildSeatResult();
 
@@ -1106,22 +1273,76 @@ function startLottery(){
 
  }
 
- presentationMode();
+ isAnimating = true;
+
+ savePreviousSeats(result);
  renderSeatMap(result);
+ 
+ document.getElementById("legend").classList.remove("hidden");
+
+ isAnimating = false;
 
 }
 
-function startRevealMode(){
+async function startRevealMode(){
 
- if(!currentResult || Object.keys(currentResult).length===0){
+ if(isAnimating) return;
 
-   alert("先に席替えを実行してください");
+ const result = buildSeatResult();
+
+ if(!result){
+
+   alert("条件を満たす席替えが見つかりません");
    return;
 
  }
 
- presentationMode();
- renderSeatMap(currentResult);
+ isAnimating = true;
+ savePreviousSeats(result);
+ renderSeatMap(result);
+
+ const animArea = document.getElementById("animationArea");
+ animArea.classList.remove("hidden");
+
+ const seatArray = Array.from({length:36}, (_,i)=>i+1);
+
+ // ランダム演出を3ループ
+ const loopCount = 3;
+
+ for(let loop=0; loop<loopCount; loop++){
+
+   shuffle(seatArray);
+
+   for(const seatNum of seatArray){
+
+     animArea.textContent = `席 ${seatNum}`;
+
+     const seatElem = document.querySelector(`.seat:nth-child(${seatNum})`);
+     if(seatElem){
+       seatElem.classList.add("animating");
+     }
+
+     await new Promise(resolve=>setTimeout(resolve, 150));
+
+     if(seatElem){
+       seatElem.classList.remove("animating");
+     }
+
+   }
+
+ }
+
+ animArea.textContent = "✨ 完成！";
+ animArea.style.fontSize = "60px";
+
+ await new Promise(resolve=>setTimeout(resolve, 1500));
+
+ animArea.classList.add("hidden");
+ animArea.style.fontSize = "48px";
+
+ document.getElementById("legend").classList.remove("hidden");
+
+ isAnimating = false;
 
 }
 
@@ -1132,5 +1353,6 @@ function printSeats(){
 }
 
 </script>
+
 </body>
 </html>
