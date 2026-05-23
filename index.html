@@ -125,7 +125,35 @@ select{
  }
 
 }
+#seatSelector{
+ display:grid;
+ grid-template-columns:repeat(6,60px);
+ gap:8px;
+ margin-top:10px;
+ margin-bottom:10px;
+}
 
+.selectSeat{
+ width:60px;
+ height:60px;
+ border:2px solid #999;
+ border-radius:8px;
+ background:white;
+ cursor:pointer;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+}
+
+.selectSeat:hover{
+ background:#e3f2fd;
+}
+
+.selectedSeat{
+ background:#1976d2;
+ color:white;
+ border-color:#1976d2;
+}
 </style>
 </head>
 
@@ -195,16 +223,26 @@ placeholder="田中,佐藤">
 
 <h3>固定席設定</h3>
 
-<select id="fixedStudent">
-</select>
+<select id="fixedStudent"></select>
 
-<select id="fixedSeat">
-</select>
+<p>
+下の座席をクリックして選択
+</p>
+
+<div id="seatSelector"></div>
+
+<div>
+選択席:
+<span id="selectedSeat">
+未選択
+</span>
+</div>
 
 <button onclick="addFixedSeat()">
 固定追加
 </button>
 
+<div id="fixedSeatList"></div>
 <div id="fixedSeatList">
 </div>
 
@@ -331,10 +369,10 @@ window.addEventListener(
  "load",
  ()=>{
 
- const seatSelect =
- document.getElementById(
- "fixedSeat"
- );
+buildSeatSelector();
+
+const seat =
+selectedSeat;
 
  seatSelect.innerHTML="";
 
@@ -363,9 +401,16 @@ function addFixedSeat(){
  ).value;
 
  const seat =
- document.getElementById(
- "fixedSeat"
- ).value;
+selectedSeat;
+
+if(!seat){
+
+ alert(
+ "席を選択してください"
+ );
+
+ return;
+}
 
  if(!student)return;
 
