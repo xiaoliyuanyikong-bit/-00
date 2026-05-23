@@ -324,24 +324,29 @@ id="passwordInput">
 
 <hr>
 
-<h3>📝 生徒一覧</h3>
+<h3>👥 人数設定</h3>
+
+<input
+type="number"
+id="studentCount"
+min="1"
+max="36"
+value="35">
+
+<button onclick="generateStudents()">
+番号生成
+</button>
 
 <textarea
 id="studentList"
-rows="12"
-placeholder="1行に1人入力"></textarea>
-
-<button onclick="loadStudents()">
-名簿読込
-</button>
-
+style="display:none"></textarea>
 <hr>
 
 <h3>⬜ 前列固定</h3>
 
 <input
 id="frontInput"
-placeholder="田中,佐藤">
+placeholder="1,5,12">
 
 <hr>
 
@@ -374,7 +379,7 @@ placeholder="田中,佐藤">
 
 <input
 id="pairInput"
-placeholder="山田,鈴木">
+placeholder="3,8">
 
 <button onclick="addPair()">
 追加
@@ -389,7 +394,7 @@ placeholder="山田,鈴木">
 
 <input
 id="avoidInput"
-placeholder="A,B">
+placeholder="7,">
 
 <button onclick="addAvoidPair()">
 追加
@@ -496,7 +501,49 @@ function togglePresentationMode(){
  }
 
 }
+function generateStudents(){
 
+ const count =
+ Number(
+ document.getElementById(
+ "studentCount"
+ ).value
+ );
+
+ if(
+  count < 1 ||
+  count > 36
+ ){
+   alert("1～36人で入力してください");
+   return;
+ }
+
+ const students=[];
+
+ for(
+  let i=1;
+  i<=count;
+  i++
+ ){
+   students.push(
+    String(i)
+   );
+ }
+
+ document
+ .getElementById(
+ "studentList"
+ )
+ .value =
+ students.join("\n");
+
+ loadStudents();
+
+ alert(
+  `${count}人を生成しました`
+ );
+
+}
 function loadStudents(){
 
  const names =
@@ -571,11 +618,13 @@ window.addEventListener(
  "load",
  ()=>{
 
-buildSeatSelector();
-loadSettings();
+ buildSeatSelector();
+
+ loadSettings();
+
+ generateStudents();
 
  });
-
 function addFixedSeat(){
 
  const student =
@@ -788,11 +837,11 @@ function saveSettings(){
    pairSeats,
    avoidPairs,
 
-   students:
-   document
-   .getElementById(
-   "studentList"
-   ).value,
+ studentCount:
+document
+.getElementById(
+"studentCount"
+).value,
 
    front:
    document
@@ -812,7 +861,13 @@ function saveSettings(){
 }
 
 function loadSettings(){
+document
+.getElementById(
+"studentCount"
+).value =
+data.studentCount || 35;
 
+generateStudents();
  const saved =
  localStorage.getItem(
  "seatSystemData"
