@@ -250,6 +250,32 @@ select{
  min-width:120px;
 }
 
+.presentation-mode {
+ background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+ color:white;
+ text-shadow:1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.presentation-mode h1 {
+ color:white;
+ font-size:48px;
+}
+
+.presentation-mode .panel:first-child {
+ background:rgba(255,255,255,0.1);
+ border:2px solid rgba(255,255,255,0.3);
+}
+
+.presentation-mode button {
+ background:rgba(255,255,255,0.2);
+ border:2px solid white;
+ font-weight:bold;
+}
+
+.presentation-mode button:hover {
+ background:rgba(255,255,255,0.4);
+}
+
 </style>
 </head>
 
@@ -264,7 +290,7 @@ select{
 👨‍🏫 教師メニュー
 </button>
 
-<button onclick="presentationMode()">
+<button onclick="togglePresentationMode()">
 🎬 発表モード
 </button>
 
@@ -284,7 +310,7 @@ select{
 </div>
 
 <div id="teacherPanel"
-class="panel hidden">
+class="panel">
 
 <h2>👨‍🏫 教師設定</h2>
 
@@ -417,6 +443,7 @@ let avoidPairs = [];
 let selectedSeat = null;
 let currentResult = {};
 let isAnimating = false;
+let presentationMode = false;
 
 function teacherLogin(){
 
@@ -426,7 +453,7 @@ function teacherLogin(){
 
    document
    .getElementById("teacherPanel")
-   .classList.remove("hidden");
+   .style.display = "block";
 
  }else{
 
@@ -436,11 +463,37 @@ function teacherLogin(){
 
 }
 
-function presentationMode(){
+function togglePresentationMode(){
 
- document
- .getElementById("teacherPanel")
- .classList.add("hidden");
+ presentationMode = !presentationMode;
+
+ const body = document.body;
+ const teacherPanel = document.getElementById("teacherPanel");
+ const controlsBtn = document.querySelectorAll(".controls button");
+
+ if(presentationMode){
+
+   body.classList.add("presentation-mode");
+   teacherPanel.classList.add("hidden");
+
+   controlsBtn.forEach(btn=>{
+     if(btn.textContent.includes("教師")){
+       btn.style.display = "none";
+     }
+   });
+
+ }else{
+
+   body.classList.remove("presentation-mode");
+   teacherPanel.classList.remove("hidden");
+
+   controlsBtn.forEach(btn=>{
+     if(btn.textContent.includes("教師")){
+       btn.style.display = "inline-block";
+     }
+   });
+
+ }
 
 }
 
