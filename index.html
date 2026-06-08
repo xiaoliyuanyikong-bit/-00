@@ -52,6 +52,62 @@ input,select{width:100%;padding:9px;margin:4px 0 10px;border:1px solid #ccc;bord
   display:none !important;
 }
 
+
+/* 発表モードでは座席表全体が画面に収まるようにする */
+.presentation{
+  min-height:100vh;
+  padding:8px;
+  overflow:hidden;
+}
+.presentation h1{
+  font-size:30px !important;
+  margin-bottom:8px !important;
+}
+.presentation .panel{
+  margin-bottom:8px;
+  padding:8px;
+}
+.presentation .controls{
+  justify-content:center;
+}
+.presentation #seatMap{
+  height:calc(100vh - 150px);
+  grid-template-columns:repeat(6,1fr);
+  grid-auto-rows:1fr;
+  gap:6px;
+  margin:0 auto;
+  max-width:1200px;
+}
+.presentation .seat{
+  min-height:0 !important;
+  height:100%;
+  padding:4px;
+}
+.presentation .seatNo{
+  font-size:11px;
+  margin-bottom:2px;
+}
+.presentation .studentNo{
+  font-size:clamp(18px,3.2vw,34px) !important;
+}
+.presentation #animationArea{
+  font-size:28px;
+  padding:8px;
+  margin:6px 0;
+}
+@media(max-width:700px){
+  .presentation{
+    overflow:auto;
+  }
+  .presentation #seatMap{
+    height:auto;
+    grid-template-columns:repeat(3,1fr);
+  }
+  .presentation .seat{
+    min-height:70px !important;
+  }
+}
+
 @media(max-width:700px){body{padding:10px}.row{grid-template-columns:1fr}#seatMap,#seatSelector{grid-template-columns:repeat(3,1fr)}.presentation h1{font-size:32px}}
 @media print{body{background:white}.controls,#teacherPanel,#animationArea{display:none!important}.panel{box-shadow:none}#seatMap{gap:8px}.seat{break-inside:avoid}}
 </style>
@@ -100,6 +156,7 @@ input,select{width:100%;padding:9px;margin:4px 0 10px;border:1px solid #ccc;bord
   </div>
   <div id="seatSelector"></div>
   <button onclick="addFixedSeat()">固定追加</button>
+  <p class="note">固定追加後、生徒番号は自動で次の番号へ進みます。</p>
   <div id="fixedSeatList"></div>
 
   <h3>🔗 隣同士固定</h3>
@@ -167,9 +224,13 @@ function generateStudents(){
     document.getElementById("studentCount").value=seatCount;
     count=seatCount;
   }
+
   students=[];
-  for(let i=1;i<=count;i++)students.push(String(i));
+  for(let i=1;i<=count;i++) students.push(String(i));
+
   const sel=document.getElementById("fixedStudent");
+  const currentValue=sel.value;
+
   sel.innerHTML="";
   students.forEach(s=>{
     const op=document.createElement("option");
@@ -177,6 +238,11 @@ function generateStudents(){
     op.textContent=s+"番";
     sel.appendChild(op);
   });
+
+  // プルダウンを作り直しても、選択中の番号をできるだけ保持する
+  if(students.includes(currentValue)){
+    sel.value=currentValue;
+  }
 }
 
 function resetInvalidSettings(){
@@ -219,12 +285,35 @@ function selectSeat(n){
 }
 
 function addFixedSeat(){
-  generateStudents();
-  const stu=document.getElementById("fixedStudent").value;
-  if(!selectedSeat){alert("座席を選択してください");return;}
-  Object.keys(fixedSeats).forEach(seat=>{if(fixedSeats[seat]===stu)delete fixedSeats[seat];});
+  const select=document.getElementById("fixedStudent");
+  const stu=select.value;
+
+  if(!selectedSeat){
+    alert("座席を選択してください");
+    return;
+  }
+
+  if(!stu){
+    alert("生徒番号を選択してください");
+    return;
+  }
+
+  // 同じ生徒が別の席にすでに固定されていたら、古い固定を消す
+  Object.keys(fixedSeats).forEach(seat=>{
+    if(fixedSeats[seat]===stu) delete fixedSeats[seat];
+  });
+
   fixedSeats[selectedSeat]=stu;
   renderFixedSeats();
+
+  // 追加後は次の生徒番号へ自動で進める
+  if(select.selectedIndex < select.options.length - 1){
+    select.selectedIndex = select.selectedIndex + 1;
+  }
+
+  selectedSeat=null;
+  document.getElementById("selectedSeatText").value="";
+  document.querySelectorAll(".selectSeat").forEach(x=>x.classList.remove("selectedSeat"));
 }
 
 function renderFixedSeats(){
